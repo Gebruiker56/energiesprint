@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0b0d">
+<title>EnergieSprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0b0d;
+  --bg2:      #111317;
+  --bg3:      #181b20;
+  --bg4:      #1e2229;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --text:     #eeecea;
+  --text2:    #8a8884;
+  --text3:    #4a4a48;
+  --accent:   #c8f135;
+  --accent2:  #a8d420;
+  --accent-dim: rgba(200,241,53,0.1);
+  --blue:     #5ba3ff;
+  --blue-dim: rgba(91,163,255,0.1);
+  --orange:   #ff8c42;
+  --orange-dim: rgba(255,140,66,0.1);
+  --red:      #ff5555;
+  --red-dim:  rgba(255,85,85,0.1);
+  --r:        14px;
+  --r-lg:     20px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'Outfit',sans-serif;color:var(--text);display:flex;flex-direction:column;}
+
+/* SHELL */
+.app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;width:100%;position:relative;overflow:hidden;}
+.screens{flex:1;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 0 80px;display:none;opacity:0;transform:translateY(12px);transition:opacity 0.22s ease,transform 0.22s ease;}
+.screen.active{display:block;opacity:1;transform:translateY(0);}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  height:calc(64px + var(--safe-bot));
+  background:var(--bg2);
+  border-top:0.5px solid var(--border);
+  display:flex;align-items:flex-start;
+  padding-top:10px;
+  flex-shrink:0;
+  position:relative;z-index:10;
+}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;border:none;background:none;cursor:pointer;padding:0;}
+.nav-ico{font-size:20px;line-height:1;transition:transform 0.15s;}
+.nav-lbl{font-family:'Outfit',sans-serif;font-size:10px;color:var(--text3);transition:color 0.15s;font-weight:500;}
+.nav-btn.active .nav-ico{transform:scale(1.15);}
+.nav-btn.active .nav-lbl{color:var(--accent);}
+
+/* TOPBAR */
+.topbar{padding:calc(16px + var(--safe-top)) 20px 12px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-size:22px;font-weight:700;letter-spacing:-0.03em;color:var(--text);}
+.topbar-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+
+/* CARDS */
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:18px;margin:0 16px 12px;}
+.card-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}
+
+/* METRICS ROW */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 12px;}
+.metric{background:var(--bg3);border-radius:var(--r);padding:14px;}
+.m-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;font-weight:500;}
+.m-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;}
+.m-sub{font-size:10px;color:var(--text3);margin-top:3px;}
+.m-diff{font-size:11px;margin-top:4px;font-weight:500;}
+.up{color:var(--red);}
+.down{color:var(--accent);}
+.neutral{color:var(--text3);}
+
+/* SCORE CIRCLE */
+.score-hero{display:flex;flex-direction:column;align-items:center;padding:24px 20px 8px;}
+.score-wrap{position:relative;width:160px;height:160px;}
+.score-wrap svg{transform:rotate(-90deg);}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-num{font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:500;color:var(--text);}
+.score-of{font-size:11px;color:var(--text3);}
+.score-grade{font-size:14px;font-weight:600;margin-top:10px;letter-spacing:0.02em;}
+.score-streak{font-size:12px;color:var(--text3);margin-top:4px;}
+
+/* BARS */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.bar-row:last-child{margin-bottom:0;}
+.b-lbl{font-size:12px;color:var(--text2);width:100px;flex-shrink:0;}
+.b-track{flex:1;height:5px;background:var(--bg4);border-radius:99px;overflow:hidden;}
+.b-fill{height:100%;border-radius:99px;transition:width 0.6s cubic-bezier(.4,0,.2,1);}
+.b-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);width:56px;text-align:right;}
+
+/* TIMELINE */
+.timeline{padding:0 16px;}
+.tl-month{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--border);cursor:pointer;transition:opacity 0.15s;}
+.tl-month:last-child{border-bottom:none;}
+.tl-month:active{opacity:0.6;}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.tl-info{flex:1;}
+.tl-name{font-size:13px;font-weight:500;}
+.tl-scores{font-size:11px;color:var(--text3);margin-top:2px;}
+.tl-score{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;min-width:44px;text-align:right;}
+.tl-arrow{color:var(--text3);font-size:12px;margin-left:4px;}
+.tl-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap;}
+.best-badge{background:rgba(200,241,53,0.15);color:var(--accent);}
+.prev-badge{background:var(--bg4);color:var(--text3);}
+
+/* RECORDS */
+.records-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.record-card{background:var(--bg3);border-radius:var(--r);padding:14px;text-align:center;}
+.record-ico{font-size:22px;margin-bottom:8px;}
+.record-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:var(--accent);}
+.record-lbl{font-size:10px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:0.06em;}
+.record-when{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* INVOER */
+.form-section{margin:0 16px 12px;}
+.form-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:block;}
+.month-picker{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.month-picker::-webkit-scrollbar{display:none;}
+.month-pill{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;padding:7px 14px;border-radius:99px;border:0.5px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.15s;}
+.month-pill.active{background:var(--accent);color:#0a0b0d;border-color:var(--accent);}
+.year-picker{display:flex;gap:6px;margin-bottom:16px;}
+.year-pill{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:99px;border:0.5px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;transition:all 0.15s;}
+.year-pill.active{background:var(--bg3);color:var(--text);border-color:var(--border2);}
+
+.input-group{margin-bottom:16px;}
+.input-row-sl{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.sl-label{font-size:13px;color:var(--text2);flex:1;}
+input[type=range]{width:90px;-webkit-appearance:none;appearance:none;height:3px;background:var(--bg4);border-radius:99px;outline:none;flex-shrink:0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2.5px solid var(--bg);}
+.sl-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);min-width:62px;text-align:right;}
+
+.save-btn{display:block;width:calc(100% - 32px);margin:0 16px;padding:15px;border-radius:var(--r);background:var(--accent);color:#0a0b0d;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer;letter-spacing:0.01em;transition:opacity 0.15s,transform 0.1s;}
+.save-btn:active{opacity:0.85;transform:scale(0.98);}
+.save-msg{text-align:center;font-size:12px;color:var(--accent);min-height:20px;margin-top:10px;padding:0 16px;}
+
+/* UITDAGINGEN */
+.ch-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:0.5px solid var(--border);}
+.ch-item:last-child{border-bottom:none;}
+.ch-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.ch-info{flex:1;}
+.ch-title{font-size:13px;font-weight:500;}
+.ch-desc{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.5;}
+.ch-pts{font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;}
+.ch-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:99px;border:0.5px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.ch-btn.done{background:var(--accent-dim);color:var(--accent);border-color:rgba(200,241,53,0.2);}
+.ch-btn:not(.done):active{background:var(--bg3);}
+
+/* ACHIEVEMENTS */
+.ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.ach-item{background:var(--bg3);border-radius:var(--r);padding:14px 10px;text-align:center;}
+.ach-ico{font-size:24px;margin-bottom:6px;}
+.ach-name{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;}
+.ach-item.locked .ach-ico{filter:grayscale(1);opacity:0.3;}
+.ach-item.locked .ach-name{color:var(--text3);}
+
+/* APPARATEN */
+.dev-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:0.5px solid var(--border);}
+.dev-item:last-child{border-bottom:none;}
+.dev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dev-name{flex:1;font-size:13px;font-weight:500;}
+.dev-kwh{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);}
+.dev-risk{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.risk-hoog{background:var(--red-dim);color:var(--red);}
+.risk-midden{background:var(--orange-dim);color:var(--orange);}
+.risk-laag{background:var(--accent-dim);color:var(--accent);}
+
+/* MINI FORM */
+.mini-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.mini-input{font-family:'Outfit',sans-serif;font-size:13px;padding:9px 11px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;width:100%;}
+.mini-input::placeholder{color:var(--text3);}
+.mini-select{font-family:'Outfit',sans-serif;font-size:13px;padding:9px 11px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;width:100%;}
+.mini-select option{background:var(--bg3);}
+.mini-input:focus,.mini-select:focus{border-color:var(--accent);}
+.mini-btn{grid-column:1/-1;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;padding:10px;border-radius:var(--r);background:var(--accent-dim);color:var(--accent);border:0.5px solid rgba(200,241,53,0.2);cursor:pointer;transition:all 0.15s;}
+.mini-btn:active{background:var(--accent);color:#0a0b0d;}
+.mini-msg{font-size:11px;color:var(--accent);min-height:16px;margin-top:4px;}
+
+/* ONBOARDING */
+.onboard{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;max-width:430px;margin:0 auto;}
+.onboard-logo{font-size:42px;font-weight:700;color:var(--accent);letter-spacing:-0.04em;margin-bottom:8px;}
+.onboard-sub{font-size:14px;color:var(--text3);margin-bottom:40px;text-align:center;line-height:1.6;}
+.onboard-input{font-family:'Outfit',sans-serif;font-size:15px;padding:14px 16px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;width:100%;margin-bottom:10px;}
+.onboard-input:focus{border-color:var(--accent);}
+.onboard-select{font-family:'Outfit',sans-serif;font-size:15px;padding:14px 16px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;width:100%;margin-bottom:10px;}
+.onboard-select option{background:var(--bg2);}
+.onboard-btn{width:100%;padding:16px;border-radius:var(--r);background:var(--accent);color:#0a0b0d;font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;border:none;cursor:pointer;margin-top:8px;}
+.onboard-privacy{font-size:11px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.7;}
+.onboard-privacy strong{color:var(--text2);}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:160px;}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div class="onboard" id="onboard">
+  <div class="onboard-logo">⚡Sprint</div>
+  <div class="onboard-sub">Win van jezelf.<br>Jouw energie, jouw data, jouw kampioenschap.</div>
+  <input class="onboard-input" id="ob-name" type="text" placeholder="Naam of bijnaam (bijv. Fam. Jansen)">
+  <select class="onboard-select" id="ob-type">
+    <option value="rijtjeswoning">Rijtjeswoning</option>
+    <option value="hoekwoning">Hoekwoning</option>
+    <option value="vrijstaand">Vrijstaande woning</option>
+    <option value="appartement">Appartement</option>
+    <option value="2kapper">Twee-onder-een-kap</option>
+  </select>
+  <select class="onboard-select" id="ob-persons">
+    <option value="1">1 persoon</option>
+    <option value="2">2 personen</option>
+    <option value="3">3 personen</option>
+    <option value="4" selected>4 personen</option>
+    <option value="5">5+ personen</option>
+  </select>
+  <button class="onboard-btn" onclick="startApp()">Beginnen</button>
+  <div class="onboard-privacy">
+    <strong>100% privé.</strong><br>
+    Alle data blijft op dit apparaat.<br>
+    Geen account, geen server, geen derden.
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div class="app" id="appShell" style="display:none;">
+  <div class="screens">
+
+    <!-- HOME -->
+    <div class="screen active" id="s-home">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title" id="home-title">EnergieSprint</div>
+          <div class="topbar-sub" id="home-sub">Jouw persoonlijke record</div>
+        </div>
+        <div style="font-size:22px;">⚡</div>
+      </div>
+
+      <div class="score-hero">
+        <div class="score-wrap">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="68" fill="none" stroke="#1e2229" stroke-width="10"/>
+            <circle id="score-ring" cx="80" cy="80" r="68" fill="none" stroke="#c8f135" stroke-width="10"
+              stroke-dasharray="427" stroke-dashoffset="107" stroke-linecap="round" style="transition:stroke-dashoffset 0.8s ease;"/>
+          </svg>
+          <div class="score-center">
+            <div class="score-num" id="home-score">75</div>
+            <div class="score-of">/ 100</div>
+          </div>
+        </div>
+        <div class="score-grade" id="home-grade" style="color:var(--accent);">Goed</div>
+        <div class="score-streak" id="home-streak">3 maanden verbetering op rij</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="m-lbl">Elektriciteit</div>
+          <div class="m-val" id="hm-el" style="color:var(--blue);">—</div>
+          <div class="m-diff" id="hm-el-diff"></div>
+        </div>
+        <div class="metric">
+          <div class="m-lbl">Gas</div>
+          <div class="m-val" id="hm-gas" style="color:var(--accent);">—</div>
+          <div class="m-diff" id="hm-gas-diff"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Persoonlijk record</div>
+        <div class="records-grid" id="home-records"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Verbruik per categorie</div>
+        <div id="home-cat-bars"></div>
+      </div>
+    </div>
+
+    <!-- TIJDLIJN -->
+    <div class="screen" id="s-tijdlijn">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Tijdlijn</div>
+          <div class="topbar-sub">Jij vs. jezelf</div>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="m-lbl">Beste score</div>
+          <div class="m-val" id="tl-best" style="color:var(--accent);">—</div>
+          <div class="m-sub" id="tl-best-when">—</div>
+        </div>
+        <div class="metric">
+          <div class="m-lbl">Totale besparing</div>
+          <div class="m-val" id="tl-saved" style="color:var(--accent);">—</div>
+          <div class="m-sub">t.o.v. start</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Scoreverloop</div>
+        <div class="chart-wrap">
+          <canvas id="tlChart" role="img" aria-label="Scoreverloop in de tijd">Scoreverloop.</canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Alle maanden</div>
+        <div class="timeline" id="tl-list" style="padding:0;"></div>
+      </div>
+    </div>
+
+    <!-- INVOEREN -->
+    <div class="screen" id="s-invoer">
+      <div class="topbar">
+        <div class="topbar-title">Invoeren</div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Jaar</label>
+        <div class="year-picker" id="year-picker"></div>
+        <label class="form-label">Maand</label>
+        <div class="month-picker" id="month-picker"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Elektriciteit</div>
+        <div class="input-group">
+          <div class="input-row-sl">
+            <div class="sl-label">Verbruik (kWh)</div>
+            <input type="range" min="50" max="700" step="1" id="sl-el" oninput="slUpdate('sl-el','sv-el','kWh')">
+            <div class="sl-val" id="sv-el">312 kWh</div>
+          </div>
+          <div class="input-row-sl">
+            <div class="sl-label">Teruglevering zonnepanelen</div>
+            <input type="range" min="0" max="400" step="1" id="sl-sol" oninput="slUpdate('sl-sol','sv-sol','kWh')">
+            <div class="sl-val" id="sv-sol">0 kWh</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Gas</div>
+        <div class="input-group">
+          <div class="input-row-sl">
+            <div class="sl-label">Verbruik (m³)</div>
+            <input type="range" min="0" max="300" step="1" id="sl-gas" oninput="slUpdate('sl-gas','sv-gas','m³')">
+            <div class="sl-val" id="sv-gas">41 m³</div>
+          </div>
+          <div class="input-row-sl">
+            <div class="sl-label">Thermostaat (°C)</div>
+            <input type="range" min="15" max="22" step="0.5" id="sl-temp" oninput="slUpdate('sl-temp','sv-temp','°C')">
+            <div class="sl-val" id="sv-temp">19.5 °C</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveMonth()">Opslaan</button>
+      <div class="save-msg" id="save-msg"></div>
+
+      <div class="card" style="margin-top:8px;">
+        <div class="card-label">Apparaatmetingen</div>
+        <div id="dev-list"></div>
+        <div class="mini-form">
+          <input class="mini-input" id="dev-name" type="text" placeholder="Apparaatnaam" style="grid-column:1/-1;">
+          <select class="mini-select" id="dev-cat">
+            <option value="verwarming">Verwarming</option>
+            <option value="witgoed">Witgoed</option>
+            <option value="elektronica" selected>Elektronica</option>
+            <option value="verlichting">Verlichting</option>
+            <option value="keuken">Keuken</option>
+          </select>
+          <input class="mini-input" id="dev-watt" type="number" placeholder="Watt" min="1" max="5000">
+          <input class="mini-input" id="dev-hours" type="number" placeholder="Uur/dag" min="0.1" max="24" step="0.5">
+          <button class="mini-btn" onclick="addDevice()">+ Apparaat toevoegen</button>
+          <div class="mini-msg" id="dev-msg" style="grid-column:1/-1;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UITDAGINGEN -->
+    <div class="screen" id="s-uitdagingen">
+      <div class="topbar">
+        <div class="topbar-title">Uitdagingen</div>
+      </div>
+      <div class="metrics" id="ch-metrics-row"></div>
+      <div class="card">
+        <div class="card-label">Actieve uitdagingen</div>
+        <div id="ch-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Achievements</div>
+        <div class="ach-grid" id="ach-grid"></div>
+      </div>
+    </div>
+
+    <!-- TIPS -->
+    <div class="screen" id="s-tips">
+      <div class="topbar">
+        <div class="topbar-title">Bespaartips</div>
+      </div>
+      <div class="card">
+        <div id="tips-list"></div>
+      </div>
+    </div>
+
+    <!-- OVER -->
+    <div class="screen" id="s-over">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Over dit prototype</div>
+          <div class="topbar-sub">Versie 0.1 — voor gedachtenvorming</div>
+        </div>
+      </div>
+
+      <div style="padding:0 16px 12px;">
+        <div style="background:var(--accent-dim);border:0.5px solid rgba(200,241,53,0.2);border-radius:var(--r-lg);padding:18px;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;">⚡ EnergieSprint</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">Een privacy-first app waarmee een huishouden het eigen energieverbruik leert kennen, bijhoudt en minimaliseert. De uitdaging: win van jezelf en word je eigen kampioen.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Kernprincipes</div>
+        <div id="principles-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Wat werkt al</div>
+        <div id="done-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Ideeën voor doorontwikkeling</div>
+        <div id="ideas-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Techniek</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          Eén HTML-bestand · Geen server · Geen account<br>
+          Data opgeslagen in browser (localStorage)<br>
+          Werkt offline na eerste bezoek<br>
+          Deelbaar als link via GitHub Pages
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Gebouwd met</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          Claude (Anthropic) — AI-gedreven ontwikkeling<br>
+          Chart.js — grafieken<br>
+          Google Fonts (Outfit + JetBrains Mono)<br>
+          Vanilla HTML / CSS / JavaScript
+        </div>
+      </div>
+
+      <div style="padding:0 16px 12px;">
+        <button class="save-btn" style="background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);" onclick="resetApp()">
+          Opnieuw beginnen (data wissen)
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="goTo('home',this)"><div class="nav-ico">◈</div><div class="nav-lbl">Home</div></button>
+    <button class="nav-btn" onclick="goTo('tijdlijn',this)"><div class="nav-ico">◉</div><div class="nav-lbl">Tijdlijn</div></button>
+    <button class="nav-btn" onclick="goTo('invoer',this)"><div class="nav-ico">✎</div><div class="nav-lbl">Invoeren</div></button>
+    <button class="nav-btn" onclick="goTo('uitdagingen',this)"><div class="nav-ico">★</div><div class="nav-lbl">Doel</div></button>
+    <button class="nav-btn" onclick="goTo('over',this)"><div class="nav-ico">ℹ</div><div class="nav-lbl">Over</div></button>
+  </nav>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const MONTHS = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+const MONTHS_FULL = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+const CAT_COLORS = {verwarming:'#5ba3ff',witgoed:'#c8f135',elektronica:'#ff8c42',verlichting:'#ffd166',keuken:'#ff5555',overig:'#4a4a48'};
+
+// STATE — all stored in localStorage
+let state = {
+  profile: null,
+  entries: [],   // {year,month,el,sol,gas,temp,score}
+  devices: [],   // {name,cat,watt,hours}
+  challenges: [
+    {icon:'☀',bg:'rgba(200,241,53,0.1)',title:'Zonnig weekend',desc:'Verbruik za & zo onder 8 kWh/dag',pts:25,done:false},
+    {icon:'❄',bg:'rgba(91,163,255,0.1)',title:'Koud douchen',desc:'7 dagen op rij koud of lauwwarm',pts:30,done:false},
+    {icon:'↓',bg:'rgba(200,241,53,0.1)',title:'Thermostaat omlaag',desc:'1°C lager voor 14 dagen',pts:40,done:false},
+    {icon:'⚡',bg:'rgba(255,140,66,0.1)',title:'Geen stand-by',desc:'Alle apparaten uit gedurende 1 week',pts:20,done:false},
+    {icon:'◎',bg:'rgba(91,163,255,0.1)',title:'Spits-vermijder',desc:'Zware apparaten buiten 17–21u',pts:35,done:false},
+    {icon:'◆',bg:'rgba(200,241,53,0.1)',title:'Radiator ontluchten',desc:'Ontlucht alle radiatoren',pts:10,done:false},
+    {icon:'★',bg:'rgba(255,85,85,0.1)',title:'Energiescan',desc:'Voer alle apparaten in bij metingen',pts:20,done:false},
+  ],
+  selectedYear: new Date().getFullYear(),
+  selectedMonth: new Date().getMonth(),
+};
+
+function save() { localStorage.setItem('es_state', JSON.stringify(state)); }
+function load() {
+  const d = localStorage.getItem('es_state');
+  if (d) { try { state = {...state, ...JSON.parse(d)}; } catch(e){} }
+}
+
+function calcScore(el, sol, gas, temp) {
+  const net = Math.max(0, el - sol);
+  const elScore = Math.max(0, Math.min(40, 40 - Math.round((net - 150) / 9)));
+  const gasScore = Math.max(0, Math.min(35, 35 - Math.round((gas - 15) / 5)));
+  const solBonus = Math.min(10, Math.round(sol / 20));
+  const tempBonus = Math.round(Math.max(0, (20 - temp) * 1.5));
+  return Math.min(100, Math.max(0, elScore + gasScore + solBonus + tempBonus));
+}
+
+function gradeInfo(s) {
+  if (s >= 90) return {label:'Kampioen!', color:'var(--accent)'};
+  if (s >= 80) return {label:'Uitstekend', color:'var(--accent)'};
+  if (s >= 70) return {label:'Goed', color:'var(--accent)'};
+  if (s >= 55) return {label:'Matig', color:'var(--orange)'};
+  return {label:'Verbetering nodig', color:'var(--red)'};
+}
+
+function diffLabel(cur, prev, unit, lowerIsBetter) {
+  if (prev == null) return '';
+  const d = cur - prev;
+  if (d === 0) return `<span class="neutral">= gelijk</span>`;
+  const better = lowerIsBetter ? d < 0 : d > 0;
+  const cls = better ? 'down' : 'up';
+  const sign = d > 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${d} ${unit} ${better ? '▼' : '▲'}</span>`;
+}
+
+// ---- ONBOARDING ----
+function startApp() {
+  const name = document.getElementById('ob-name').value.trim() || 'Mijn huishouden';
+  const type = document.getElementById('ob-type').value;
+  const persons = document.getElementById('ob-persons').value;
+  state.profile = {name, type, persons};
+
+  // Seed demo data (12 months)
+  const seedEl = [420,390,360,335,315,310,295,290,280,275,268,260];
+  const seedGas = [145,122,92,64,49,42,18,14,12,48,90,130];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const el = seedEl[11-i] + Math.round((Math.random()-0.5)*15);
+    const sol = i < 6 ? Math.round(40 + (11-i)*8) : 0;
+    const gas = seedGas[11-i] + Math.round((Math.random()-0.5)*8);
+    const temp = 19.5 - (11-i) * 0.08;
+    state.entries.push({year:d.getFullYear(), month:d.getMonth(), el, sol, gas, temp: parseFloat(temp.toFixed(1)), score: calcScore(el,sol,gas,temp)});
+  }
+  save();
+  document.getElementById('onboard').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  initApp();
+}
+
+// ---- INIT ----
+load();
+if (state.profile) {
+  document.getElementById('onboard').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  initApp();
+}
+
+function initApp() {
+  buildYearPicker();
+  buildMonthPicker();
+  renderHome();
+  renderTijdlijn();
+  renderInvoer();
+  renderChallenges();
+  renderTips();
+  renderDevices();
+  renderOver();
+}
+
+function resetApp() {
+  if (confirm('Alle data wissen en opnieuw beginnen?')) {
+    localStorage.removeItem('es_state');
+    location.reload();
+  }
+}
+
+// ---- NAV ----
+function goTo(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ---- HOME ----
+function renderHome() {
+  if (!state.profile) return;
+  document.getElementById('home-title').textContent = state.profile.name;
+  document.getElementById('home-sub').textContent = state.profile.type + ' · ' + state.profile.persons + ' personen';
+
+  const entries = state.entries;
+  if (!entries.length) return;
+
+  const last = entries[entries.length-1];
+  const prev = entries.length > 1 ? entries[entries.length-2] : null;
+
+  document.getElementById('hm-el').textContent = last.el + ' kWh';
+  document.getElementById('hm-gas').textContent = last.gas + ' m³';
+  document.getElementById('hm-el-diff').innerHTML = prev ? diffLabel(last.el, prev.el, 'kWh', true) : '';
+  document.getElementById('hm-gas-diff').innerHTML = prev ? diffLabel(last.gas, prev.gas, 'm³', true) : '';
+
+  const score = last.score;
+  const ci = Math.round(427 - (427 * score / 100));
+  document.getElementById('score-ring').style.strokeDashoffset = ci;
+  document.getElementById('home-score').textContent = score;
+  const gi = gradeInfo(score);
+  document.getElementById('home-grade').textContent = gi.label;
+  document.getElementById('home-grade').style.color = gi.color;
+
+  // Streak
+  let streak = 0;
+  for (let i = entries.length-1; i > 0; i--) {
+    if (entries[i].score > entries[i-1].score) streak++; else break;
+  }
+  document.getElementById('home-streak').textContent = streak > 0 ? streak + ' maand' + (streak>1?'en':'') + ' verbetering op rij 🔥' : 'Blijf verbeteren voor een streak!';
+
+  // Records
+  const bestScore = Math.max(...entries.map(e => e.score));
+  const bestScoreEntry = entries.find(e => e.score === bestScore);
+  const lowestEl = Math.min(...entries.map(e => e.el));
+  const lowestElEntry = entries.find(e => e.el === lowestEl);
+  const lowestGas = Math.min(...entries.map(e => e.gas));
+  const lowestGasEntry = entries.find(e => e.gas === lowestGas);
+  const highSol = Math.max(...entries.map(e => e.sol||0));
+
+  document.getElementById('home-records').innerHTML = `
+    <div class="record-card"><div class="record-ico">🏆</div><div class="record-val">${bestScore}</div><div class="record-lbl">Beste score</div><div class="record-when">${MONTHS[bestScoreEntry.month]} ${bestScoreEntry.year}</div></div>
+    <div class="record-card"><div class="record-ico">⚡</div><div class="record-val">${lowestEl}</div><div class="record-lbl">Min. elektra kWh</div><div class="record-when">${MONTHS[lowestElEntry.month]} ${lowestElEntry.year}</div></div>
+    <div class="record-card"><div class="record-ico">🔥</div><div class="record-val">${lowestGas}</div><div class="record-lbl">Min. gas m³</div><div class="record-when">${MONTHS[lowestGasEntry.month]} ${lowestGasEntry.year}</div></div>
+    <div class="record-card"><div class="record-ico">☀</div><div class="record-val">${highSol}</div><div class="record-lbl">Max. teruglevering</div><div class="record-when">kWh ooit</div></div>
+  `;
+
+  // Cat bars
+  const catData = [
+    {lbl:'Verwarming', pct:Math.round(last.gas/145*62), val: Math.round(last.el*0.3)+' kWh', color:'#5ba3ff'},
+    {lbl:'Witgoed', pct:28, val: Math.round(last.el*0.14)+' kWh', color:'#c8f135'},
+    {lbl:'Elektronica', pct:22, val: Math.round(last.el*0.09)+' kWh', color:'#ff8c42'},
+    {lbl:'Verlichting', pct:18, val: Math.round(last.el*0.11)+' kWh', color:'#ffd166'},
+    {lbl:'Overig', pct:12, val: Math.round(last.el*0.06)+' kWh', color:'#4a4a48'},
+  ];
+  document.getElementById('home-cat-bars').innerHTML = catData.map(c =>
+    `<div class="bar-row">
+      <div class="b-lbl">${c.lbl}</div>
+      <div class="b-track"><div class="b-fill" style="width:${c.pct}%;background:${c.color};"></div></div>
+      <div class="b-val">${c.val}</div>
+    </div>`).join('');
+}
+
+// ---- TIJDLIJN ----
+let tlChart = null;
+function renderTijdlijn() {
+  const entries = state.entries;
+  if (!entries.length) {
+    document.getElementById('tl-list').innerHTML = '<div style="font-size:13px;color:var(--text3);padding:16px 0;text-align:center;">Nog geen maanden ingevoerd.</div>';
+    return;
+  }
+
+  const bestScore = Math.max(...entries.map(e => e.score));
+  const firstScore = entries[0].score;
+  const lastScore = entries[entries.length-1].score;
+  const totalKwhDiff = entries[0].el - entries[entries.length-1].el;
+  const bestEntry = entries.find(e => e.score === bestScore);
+
+  document.getElementById('tl-best').textContent = bestScore;
+  document.getElementById('tl-best-when').textContent = MONTHS_FULL[bestEntry.month] + ' ' + bestEntry.year;
+  document.getElementById('tl-saved').textContent = (totalKwhDiff > 0 ? '+' : '') + totalKwhDiff + ' kWh';
+
+  // Chart
+  if (tlChart) tlChart.destroy();
+  tlChart = new Chart(document.getElementById('tlChart'), {
+    type:'line',
+    data:{
+      labels: entries.map(e => MONTHS[e.month] + ' ' + String(e.year).slice(2)),
+      datasets:[{
+        data: entries.map(e => e.score),
+        borderColor:'#c8f135', backgroundColor:'rgba(200,241,53,0.06)',
+        fill:true, tension:0.35, pointRadius:4,
+        pointBackgroundColor: entries.map(e => e.score === bestScore ? '#c8f135' : '#111317'),
+        pointBorderColor:'#c8f135', pointBorderWidth:2,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4a4a48',font:{size:10,family:'JetBrains Mono'},maxRotation:45}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4a4a48',font:{size:10,family:'JetBrains Mono'}},min:0,max:100}
+      }
+    }
+  });
+
+  // List
+  const reversed = [...entries].reverse();
+  document.getElementById('tl-list').innerHTML = reversed.map((e,i) => {
+    const isBest = e.score === bestScore;
+    const prev = entries[entries.indexOf(e)-1];
+    const diff = prev ? e.score - prev.score : null;
+    const diffStr = diff !== null ? (diff > 0 ? '<span style="color:var(--accent)">+'+diff+'</span>' : diff < 0 ? '<span style="color:var(--red)">'+diff+'</span>' : '<span style="color:var(--text3)">±0</span>') : '';
+    const dotColor = isBest ? 'var(--accent)' : e.score >= 70 ? 'var(--blue)' : 'var(--text3)';
+    return `<div class="tl-month">
+      <div class="tl-dot" style="background:${dotColor};"></div>
+      <div class="tl-info">
+        <div class="tl-name">${MONTHS_FULL[e.month]} ${e.year}</div>
+        <div class="tl-scores">${e.el} kWh · ${e.gas} m³ ${diffStr ? '· score '+diffStr : ''}</div>
+      </div>
+      <div class="tl-score" style="color:${dotColor};">${e.score}</div>
+      ${isBest ? '<span class="tl-badge best-badge">Record</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// ---- INVOER ----
+function buildYearPicker() {
+  const now = new Date();
+  const years = [now.getFullYear()-1, now.getFullYear()];
+  document.getElementById('year-picker').innerHTML = years.map(y =>
+    `<button class="year-pill ${y===state.selectedYear?'active':''}" onclick="selectYear(${y},this)">${y}</button>`
+  ).join('');
+}
+
+function buildMonthPicker() {
+  document.getElementById('month-picker').innerHTML = MONTHS.map((m,i) =>
+    `<button class="month-pill ${i===state.selectedMonth?'active':''}" onclick="selectMonth(${i},this)">${m}</button>`
+  ).join('');
+  loadMonthData();
+}
+
+function selectYear(y, btn) {
+  state.selectedYear = y;
+  document.querySelectorAll('.year-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadMonthData();
+}
+
+function selectMonth(m, btn) {
+  state.selectedMonth = m;
+  document.querySelectorAll('.month-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadMonthData();
+}
+
+function loadMonthData() {
+  const e = state.entries.find(e => e.year === state.selectedYear && e.month === state.selectedMonth);
+  const el = e ? e.el : 300;
+  const sol = e ? (e.sol||0) : 0;
+  const gas = e ? e.gas : 50;
+  const temp = e ? e.temp : 19.5;
+  document.getElementById('sl-el').value = el; document.getElementById('sv-el').textContent = el + ' kWh';
+  document.getElementById('sl-sol').value = sol; document.getElementById('sv-sol').textContent = sol + ' kWh';
+  document.getElementById('sl-gas').value = gas; document.getElementById('sv-gas').textContent = gas + ' m³';
+  document.getElementById('sl-temp').value = temp; document.getElementById('sv-temp').textContent = temp + ' °C';
+}
+
+function slUpdate(slId, valId, unit) {
+  const v = parseFloat(document.getElementById(slId).value);
+  document.getElementById(valId).textContent = v.toFixed(unit==='°C'?1:0) + ' ' + unit;
+}
+
+function saveMonth() {
+  const el = parseInt(document.getElementById('sl-el').value);
+  const sol = parseInt(document.getElementById('sl-sol').value);
+  const gas = parseInt(document.getElementById('sl-gas').value);
+  const temp = parseFloat(document.getElementById('sl-temp').value);
+  const score = calcScore(el, sol, gas, temp);
+  const idx = state.entries.findIndex(e => e.year===state.selectedYear && e.month===state.selectedMonth);
+  const entry = {year:state.selectedYear, month:state.selectedMonth, el, sol, gas, temp, score};
+  if (idx >= 0) state.entries[idx] = entry;
+  else state.entries.push(entry);
+  state.entries.sort((a,b) => a.year!==b.year ? a.year-b.year : a.month-b.month);
+  save();
+  renderHome();
+  renderTijdlijn();
+  const msg = document.getElementById('save-msg');
+  msg.textContent = MONTHS_FULL[state.selectedMonth] + ' ' + state.selectedYear + ' opgeslagen. Score: ' + score + ' punten.';
+  setTimeout(() => msg.textContent = '', 3000);
+}
+
+// ---- APPARATEN ----
+function renderDevices() {
+  const sorted = [...state.devices].sort((a,b) => kwhM(b) - kwhM(a));
+  document.getElementById('dev-list').innerHTML = sorted.length ? sorted.map((d,i) => {
+    const kwh = kwhM(d);
+    const risk = kwh > 25 ? 'hoog' : kwh > 10 ? 'midden' : 'laag';
+    return `<div class="dev-item">
+      <div class="dev-dot" style="background:${CAT_COLORS[d.cat]||'#888'};"></div>
+      <div class="dev-name">${d.name}</div>
+      <div class="dev-kwh">${kwh} kWh/mnd</div>
+      <div class="dev-risk risk-${risk}">${risk}</div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text3);padding:8px 0;">Nog geen apparaten toegevoegd.</div>';
+}
+
+function kwhM(d) { return Math.round(d.watt * d.hours * 30 / 1000); }
+
+function addDevice() {
+  const name = document.getElementById('dev-name').value.trim();
+  const cat = document.getElementById('dev-cat').value;
+  const watt = parseFloat(document.getElementById('dev-watt').value);
+  const hours = parseFloat(document.getElementById('dev-hours').value);
+  const msg = document.getElementById('dev-msg');
+  if (!name || !watt || !hours) { msg.style.color='var(--red)'; msg.textContent='Vul alle velden in.'; return; }
+  state.devices.push({name,cat,watt,hours});
+  save();
+  renderDevices();
+  document.getElementById('dev-name').value = '';
+  document.getElementById('dev-watt').value = '';
+  document.getElementById('dev-hours').value = '';
+  msg.style.color='var(--accent)'; msg.textContent=name+' toegevoegd.';
+  setTimeout(()=>msg.textContent='', 2000);
+}
+
+// ---- CHALLENGES ----
+function renderChallenges() {
+  const done = state.challenges.filter(c => c.done).length;
+  const pts = state.challenges.filter(c => c.done).reduce((s,c)=>s+c.pts,0);
+  const open = state.challenges.filter(c => !c.done).reduce((s,c)=>s+c.pts,0);
+  document.getElementById('ch-metrics-row').innerHTML = `
+    <div class="metric"><div class="m-lbl">Behaald</div><div class="m-val" style="color:var(--accent);">${done}/${state.challenges.length}</div><div class="m-sub">uitdagingen</div></div>
+    <div class="metric"><div class="m-lbl">Verdiend</div><div class="m-val">${pts}</div><div class="m-sub">punten</div></div>
+  `;
+  document.getElementById('ch-list').innerHTML = state.challenges.map((c,i) =>
+    `<div class="ch-item">
+      <div class="ch-icon" style="background:${c.bg};">${c.icon}</div>
+      <div class="ch-info">
+        <div class="ch-title">${c.title}</div>
+        <div class="ch-desc">${c.desc}</div>
+        <div class="ch-pts">+${c.pts} punten</div>
+      </div>
+      <button class="ch-btn ${c.done?'done':''}" onclick="toggleCh(${i})">${c.done?'✓ Gedaan':'Starten'}</button>
+    </div>`).join('');
+
+  const ACHS = [
+    {ico:'🥇', name:'Eerste record', unlocked: state.entries.length > 0},
+    {ico:'🔥', name:'3x op rij beter', unlocked: getStreak() >= 3},
+    {ico:'⚡', name:'Onder 250 kWh', unlocked: state.entries.some(e=>e.el<250)},
+    {ico:'💧', name:'Onder 30 m³', unlocked: state.entries.some(e=>e.gas<30)},
+    {ico:'☀', name:'Zonnepioneer', unlocked: state.entries.some(e=>(e.sol||0)>100)},
+    {ico:'🏆', name:'Score 90+', unlocked: state.entries.some(e=>e.score>=90)},
+  ];
+  document.getElementById('ach-grid').innerHTML = ACHS.map(a =>
+    `<div class="ach-item ${a.unlocked?'':'locked'}">
+      <div class="ach-ico">${a.ico}</div>
+      <div class="ach-name">${a.name}</div>
+    </div>`).join('');
+}
+
+function getStreak() {
+  let streak = 0;
+  for (let i = state.entries.length-1; i > 0; i--) {
+    if (state.entries[i].score > state.entries[i-1].score) streak++; else break;
+  }
+  return streak;
+}
+
+function toggleCh(i) {
+  state.challenges[i].done = !state.challenges[i].done;
+  save();
+  renderChallenges();
+}
+
+// ---- TIPS ----
+function renderTips() {
+  const TIPS = [
+    {ico:'◈', bg:'rgba(91,163,255,0.1)', title:'Thermostaat 1°C lager', desc:'Elke graad lager bespaart ~6% op verwarming. Stel nachtverlaging in op 15°C.', saving:'ca. €12–18/maand'},
+    {ico:'◎', bg:'rgba(200,241,53,0.1)', title:'Was op 30°C', desc:'Modern wasmiddel werkt prima op 30°C. Scheelt 60% energie per was t.o.v. 60°C.', saving:'ca. €4–7/maand'},
+    {ico:'⊙', bg:'rgba(255,140,66,0.1)', title:'LED verlichting', desc:'Vervang resterende gloeilampen. LED verbruikt 85% minder per uur.', saving:'ca. €6–10/maand'},
+    {ico:'▣', bg:'rgba(255,85,85,0.1)', title:'Stand-by aanpakken', desc:'TV, router en opladers op een schakelaar. Gemiddeld 10% van de rekening.', saving:'ca. €8–14/maand'},
+    {ico:'◉', bg:'rgba(200,241,53,0.1)', title:'Korter douchen', desc:'Elke minuut minder bespaart ca. 10L warm water. Streef naar max. 5 minuten.', saving:'ca. €5–9/maand'},
+    {ico:'◆', bg:'rgba(255,140,66,0.1)', title:'Radiatoren ontluchten', desc:'Lucht in radiatoren kost 15–20% extra gas. Ontlucht jaarlijks voor de winter.', saving:'ca. €10–20/maand (winter)'},
+    {ico:'★', bg:'rgba(91,163,255,0.1)', title:'Koelkast optimaliseren', desc:'Zet op 4°C, niet kouder. Controleer de afdichting. Nooit warm eten erin.', saving:'ca. €3–6/maand'},
+  ];
+  document.getElementById('tips-list').innerHTML = TIPS.map(t =>
+    `<div class="tip-item">
+      <div class="ch-icon" style="background:${t.bg};flex-shrink:0;">${t.ico}</div>
+      <div>
+        <div class="ch-title">${t.title}</div>
+        <div class="ch-desc">${t.desc}</div>
+        <div class="ch-pts">${t.saving}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ---- OVER ----
+function renderOver() {
+  const PRINCIPLES = [
+    {ico:'◈', text:'Privacy eerst — alle data blijft op het apparaat van de gebruiker'},
+    {ico:'◉', text:'Jij vs. jezelf — geen vergelijking met anderen, geen sociale druk'},
+    {ico:'★', text:'Gamification — score, streaks en achievements maken het leuk'},
+    {ico:'◆', text:'Laagdrempelig — geen slimme meter nodig, handmatig invoeren volstaat'},
+    {ico:'⚡', text:'Inzicht creëren — van "ik weet het niet" naar bewust gedrag'},
+  ];
+  const DONE = [
+    'Onboarding met profiel instellen',
+    'Maandelijkse invoer elektra, gas en zonnepanelen',
+    'Energiescore-berekening (0–100)',
+    'Tijdlijn met scoregrafiek en persoonlijk record',
+    'Apparaatmetingen met risico-analyse',
+    'Uitdagingen en achievements',
+    'Bespaartips met maandelijkse besparing',
+    'Data opslaan in browser (privé, offline)',
+  ];
+  const IDEAS = [
+    {ico:'📊', text:'Koppeling P1-poort slimme meter (automatisch inlezen)'},
+    {ico:'💶', text:'Energietarieven invoeren → kosten per maand berekenen'},
+    {ico:'📄', text:'Maandrapport exporteren als PDF'},
+    {ico:'🔔', text:'Push-notificatie: herinnering om maand in te voeren'},
+    {ico:'📈', text:'Benchmark met anoniem gemiddelde vergelijkbaar huishouden'},
+    {ico:'🏠', text:'Meerdere profielen per apparaat (bijv. vakantiewoning)'},
+    {ico:'🌱', text:'CO₂-uitstoot naast kWh en m³ tonen'},
+    {ico:'🔌', text:'Apparatenbibliotheek met standaard wattages'},
+    {ico:'📱', text:'Echte PWA-installatie met app-icoon en offline cache'},
+    {ico:'🤝', text:'Optioneel: anoniem deelnemen aan buurt-benchmark'},
+  ];
+
+  document.getElementById('principles-list').innerHTML = PRINCIPLES.map(p =>
+    `<div class="tip-item">
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${p.ico}</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">${p.text}</div>
+    </div>`).join('');
+
+  document.getElementById('done-list').innerHTML = DONE.map(d =>
+    `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:flex-start;">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px;"></div>
+      <div style="font-size:13px;color:var(--text2);">${d}</div>
+    </div>`).join('');
+
+  document.getElementById('ideas-list').innerHTML = IDEAS.map(idea =>
+    `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);align-items:flex-start;">
+      <div style="font-size:16px;width:24px;flex-shrink:0;">${idea.ico}</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">${idea.text}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
